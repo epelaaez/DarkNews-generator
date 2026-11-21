@@ -568,7 +568,7 @@ def get_momenta_from_vegas_samples(vsamples, MC_case):
     if MC_case.decays_to_dilepton:
         mf = MC_case.decay_case.m_daughter
         mm = MC_case.decay_case.mm
-        mp = MC_case.decay_case.mm
+        mp = MC_case.decay_case.mp
 
         if MC_case.decay_case.vector_on_shell or MC_case.decay_case.scalar_on_shell:
             if MC_case.decay_case.vector_on_shell and MC_case.decay_case.scalar_off_shell:
@@ -704,7 +704,7 @@ def get_decay_momenta_from_vegas_samples(vsamples, decay_case, PN_LAB):
         mh = decay_case.m_parent
         mf = decay_case.m_daughter
         mm = decay_case.mm
-        mp = decay_case.mm
+        mp = decay_case.mp
 
         if decay_case.vector_on_shell or decay_case.scalar_on_shell:
             if decay_case.vector_on_shell and decay_case.scalar_off_shell:

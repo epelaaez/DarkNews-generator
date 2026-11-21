@@ -294,7 +294,7 @@ def two_body_decay(samples, boost=False, m1=1, m2=0, m3=0, rng=np.random.random)
 
     # azimuthal angle of k2
     if "unit_phiz" in samples.keys():
-        phiz = 2 * samples["unit_phiz"] - 1
+        phiz = 2 * np.pi * samples["unit_phiz"]
     elif "phiz" in samples.keys():
         phiz = samples["phiz"]
     else:
