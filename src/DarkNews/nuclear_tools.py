@@ -345,17 +345,21 @@ def D(Q2):
 
 ## nucleon
 def nucleon_F1_EM(Q2, tau3):
-    # pick nucleon mag moment
+    # pick nucleon charge and mag moment
+    CHARGE = (1 + tau3) / 2.0
     MAG = (MAG_P + MAG_N + tau3 * (MAG_P - MAG_N)) / 2.0
     tau = -Q2 / 4.0 / const.m_proton**2
-    return (D(Q2) - tau * MAG * D(Q2)) / (1 - tau)
+    # F1 = (G_E + Q2/4M2 * G_M) / (1 + Q2/4M2), with G_E = charge * D and G_M = mu * D
+    return (CHARGE * D(Q2) - tau * MAG * D(Q2)) / (1 - tau)
 
 
 def nucleon_F2_EM(Q2, tau3):
-    # pick nucleon mag moment
+    # pick nucleon charge and mag moment
+    CHARGE = (1 + tau3) / 2.0
     MAG = (MAG_P + MAG_N + tau3 * (MAG_P - MAG_N)) / 2.0
     tau = -Q2 / 4.0 / const.m_proton**2
-    return (MAG * D(Q2) - D(Q2)) / (1 - tau)
+    # F2 = (G_M - G_E) / (1 + Q2/4M2)
+    return (MAG * D(Q2) - CHARGE * D(Q2)) / (1 - tau)
 
 
 def nucleon_F1_NC(Q2, tau3):

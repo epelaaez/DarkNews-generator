@@ -108,12 +108,13 @@ class UpscatteringProcess:
             self.Vhad = TheoryModel.dprotonV * self.target.Z + TheoryModel.dneutronV * self.target.N
             self.Shad = TheoryModel.dprotonS * self.target.Z + TheoryModel.dneutronS * self.target.N
         elif self.target.is_proton:
-            self.Chad = TheoryModel.cprotonV
-            self.Vhad = TheoryModel.dprotonV
+            # Z and Z' couplings to nucleons are folded into the form factors in amplitudes.py
+            self.Chad = 1.0
+            self.Vhad = 1.0
             self.Shad = TheoryModel.dprotonS
         elif self.target.is_neutron:
-            self.Chad = TheoryModel.cneutronV
-            self.Vhad = TheoryModel.dneutronV
+            self.Chad = 1.0
+            self.Vhad = 1.0
             self.Shad = TheoryModel.dneutronS
         elif getattr(self.target, "is_partonic", False):
             # DIS: only the dipole (TMM) portal is implemented; the NC/kinetic-mixing/

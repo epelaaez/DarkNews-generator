@@ -6,6 +6,7 @@ import numpy as np
 logger = logging.getLogger("logger." + __name__)
 
 from DarkNews import const
+from DarkNews import nuclear_tools
 from DarkNews.const import MZBOSON, Sqrt, eQED
 
 
@@ -110,6 +111,10 @@ def upscattering_dxsec_dQ2(x_phase_space, process, diagrams=["total"]):
     if target.is_nucleus:
         FFf1 = target.F1_EM(Q2)
         FFf2 = 0.0
+        # photon exchange (transition magnetic moment): charge form factor times Z
+        FFf1_EM = FFf1
+        FFf2_EM = 0.0
+        Z_EM = Z
         FFga = 0.0  # noqa: F841  (EM axial FF is identically zero; kept for documentation)
         FFgp = 0.0  # noqa: F841  (EM pseudoscalar FF is identically zero; kept for documentation)
 
@@ -121,17 +126,45 @@ def upscattering_dxsec_dQ2(x_phase_space, process, diagrams=["total"]):
         FFscalar = FFf1
 
     elif target.is_nucleon:
-        FFf1 = target.F1_EM(Q2)
-        FFf2 = target.F2_EM(Q2)
+        # Electromagnetic form factors of the proton and the neutron.
+        F1_p = nuclear_tools.nucleon_F1_EM(Q2, tau3=+1)
+        F2_p = nuclear_tools.nucleon_F2_EM(Q2, tau3=+1)
+        F1_n = nuclear_tools.nucleon_F1_EM(Q2, tau3=-1)
+        F2_n = nuclear_tools.nucleon_F2_EM(Q2, tau3=-1)
+
+        # For nucleons the Z and Z' couplings are folded into the form factors (Chad = Vhad = 1
+        # in processes.py). With isospin symmetry and no strange quarks, a vector current with
+        # proton and neutron charges (c_p, c_n) has form factors
+        #       proton:  c_p * F_p + c_n * F_n,         neutron:  c_n * F_p + c_p * F_n.
+        # In the SM this is the usual (1/2 - s2w) * tau3 * isovector - s2w * isoscalar combination.
+        bsm = process.TheoryModel
+        if target.is_proton:
+            cV_a, cV_b = bsm.cprotonV, bsm.cneutronV
+            dV_a, dV_b = bsm.dprotonV, bsm.dneutronV
+        else:
+            cV_a, cV_b = bsm.cneutronV, bsm.cprotonV
+            dV_a, dV_b = bsm.dneutronV, bsm.dprotonV
+
+        # Z' exchange
+        FFf1 = dV_a * F1_p + dV_b * F1_n
+        FFf2 = dV_a * F2_p + dV_b * F2_n
         FFga = 0.0  # noqa: F841  (EM axial FF is identically zero; kept for documentation)
         FFgp = 0.0  # noqa: F841  (EM pseudoscalar FF is identically zero; kept for documentation)
 
-        FFNCf1 = target.F1_NC(Q2)
-        FFNCf2 = target.F2_NC(Q2)
-        FFNCga = target.F3_NC(Q2)
+        # Z exchange. The axial part is isovector: (cA_p - cA_n) * gA * tau3 / 2.
+        FFNCf1 = cV_a * F1_p + cV_b * F1_n
+        FFNCf2 = cV_a * F2_p + cV_b * F2_n
+        FFNCga = (bsm.cprotonA - bsm.cneutronA) * target.F3_NC(Q2)
         FFNCgp = 0.0
 
-        FFscalar = FFf1
+        # photon exchange (transition magnetic moment): the nucleon's own form factors,
+        # which already contain its charge and magnetic moment
+        FFf1_EM = F1_p if target.is_proton else F1_n
+        FFf2_EM = F2_p if target.is_proton else F2_n
+        Z_EM = 1
+
+        # scalar form factor: same shape for protons and neutrons, normalised to 1 at Q2 = 0
+        FFscalar = F1_p
 
     else:
         logger.error("upscattering on a lepton not implemented.")
@@ -505,7 +538,7 @@ def upscattering_dxsec_dQ2(x_phase_space, process, diagrams=["total"]):
                 * ((M) ** (4) + (((mHNL) ** (2) + -1 * s) ** (2) + -2 * (M) ** (2) * ((mHNL) ** (2) + s))) ** (-1 / 2)
                 * (t) ** (-2)
                 * (
-                    (FFf2) ** (2)
+                    (FFf2_EM) ** (2)
                     * t
                     * (
                         ((M) ** (4) + (((mHNL) ** (2) + -1 * s) ** (2) + -2 * (M) ** (2) * ((mHNL) ** (2) + s))) ** (1 / 2)
@@ -530,8 +563,8 @@ def upscattering_dxsec_dQ2(x_phase_space, process, diagrams=["total"]):
                     )
                     + (
                         8
-                        * FFf1
-                        * FFf2
+                        * FFf1_EM
+                        * FFf2_EM
                         * (M) ** (2)
                         * t
                         * (
@@ -542,7 +575,7 @@ def upscattering_dxsec_dQ2(x_phase_space, process, diagrams=["total"]):
                             * ((mHNL) ** (4) + (-1 * s * t + ((M) ** (2) * ((mHNL) ** (2) + t) + -1 * (mHNL) ** (2) * (s + t))))
                         )
                         + 8
-                        * (FFf1) ** (2)
+                        * (FFf1_EM) ** (2)
                         * (M) ** (2)
                         * (
                             h
@@ -570,7 +603,7 @@ def upscattering_dxsec_dQ2(x_phase_space, process, diagrams=["total"]):
                         )
                     )
                 )
-                * (Z) ** (2)
+                * (Z_EM * Z_EM)
             )
 
         # scalar term SQR ########FIX-ME THESE ARE ALL STILL DIRAC vvvvvvv ########
@@ -1057,13 +1090,13 @@ def upscattering_dxsec_dQ2(x_phase_space, process, diagrams=["total"]):
                 * (eQED * eQED)
                 * (
                     -4
-                    * FFf1
-                    * FFf2
+                    * FFf1_EM
+                    * FFf2_EM
                     * (k1k2 - k1k4 - k2k3 + k3k4)
                     * (M * M)
                     * (2 * (k1k3 * k1k3) + k1k3 * (2 * h * k1s - 3 * mHNL) * mHNL + h * k1s * (mHNL * mHNL * mHNL))
                     + 4
-                    * (FFf1 * FFf1)
+                    * (FFf1_EM * FFf1_EM)
                     * (M * M)
                     * (
                         2 * k1k3 * ((k1k2 + k2k3) * (k1k4 + k3k4) + k1k3 * (-k2k4 + M * M))
@@ -1074,8 +1107,8 @@ def upscattering_dxsec_dQ2(x_phase_space, process, diagrams=["total"]):
                         + (-4 * k1k2 * k1k4 + k1k3 * (k2k4 - 3 * (M * M))) * (mHNL * mHNL)
                         + h * (-2 * (k1k4 * k2s + k1k2 * k4s) + k1s * (k2k4 + M * M)) * (mHNL * mHNL * mHNL)
                     )
-                    + FFf2
-                    * FFf2
+                    + FFf2_EM
+                    * FFf2_EM
                     * (
                         -4 * (k1k3 * k1k3 * k1k3) * (k2k4 + M * M)
                         + 4
@@ -1103,7 +1136,7 @@ def upscattering_dxsec_dQ2(x_phase_space, process, diagrams=["total"]):
                     )
                 )
                 * (Tij * Tij)
-                * (Z * Z)
+                * (Z_EM * Z_EM)
             ) / (M * M * (t * t))
 
         # scalar term SQR
