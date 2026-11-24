@@ -203,10 +203,10 @@ class UpscatteringProcess:
         """
         s = Enu * self.MA * 2 + self.MA**2
         physical = (Q2 > ps.upscattering_Q2min(Enu, self.m_ups, self.MA)) & (Q2 < ps.upscattering_Q2max(Enu, self.m_ups, self.MA))
-        u = 2 * self.MA**2 + self.m_ups - s + Q2
+        u = 2 * self.MA**2 + self.m_ups**2 - s + Q2
         diff_xsecs = amps.upscattering_dxsec_dQ2([s, -Q2, u], process=self, diagrams=diagrams)
         if type(diff_xsecs) is dict:
-            return {key: diff_xsecs[key] * physical for key in diff_xsecs.keys()}
+            return {key: diff_xsecs[key] * physical * self.target_multiplicity for key in diff_xsecs.keys()}
         else:
             return diff_xsecs * physical * self.target_multiplicity
 
@@ -392,10 +392,10 @@ class FermionDileptonDecay:
             # Ni (k1) --> ell-(k2)  ell+(k3)  Nj(k4)
 
             # t = m23^2
-            t = Cfv.dot4(Plepminus_LAB, Plepplus_LAB)
+            t = Cfv.dot4(Plepminus_LAB + Plepplus_LAB, Plepminus_LAB + Plepplus_LAB)
 
             # u = m24^2
-            u = Cfv.dot4(Plepminus_LAB, Pnu_LAB)
+            u = Cfv.dot4(Plepminus_LAB + Pnu_LAB, Plepminus_LAB + Pnu_LAB)
 
             # c3 = cosine of polar angle of k3
             # Boost ell+ to HNL rest frame
