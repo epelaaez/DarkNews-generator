@@ -152,6 +152,7 @@ def upscattering_dxsec_dQ2(x_phase_space, process, diagrams=["total"]):
         FFgp = 0.0  # noqa: F841  (EM pseudoscalar FF is identically zero; kept for documentation)
 
         # Z exchange. The axial part is isovector: (cA_p - cA_n) * gA * tau3 / 2.
+        # Strange-quark form factors (F1s, F2s and Delta s) are neglected.
         FFNCf1 = cV_a * F1_p + cV_b * F1_n
         FFNCf2 = cV_a * F2_p + cV_b * F2_n
         FFNCga = (bsm.cprotonA - bsm.cneutronA) * target.F3_NC(Q2)
